@@ -1,0 +1,13 @@
+from avatar_backend.config.config import (
+    BASE_DIR,
+    ENHANCED,
+    MAX_HISTORY_MESSAGES,
+    OPEN_WEBUI_API_KEY,
+    OPEN_WEBUI_KNOWLEDGE_ID,
+    OPEN_WEBUI_RAG_TIMEOUT,
+    OPEN_WEBUI_RAG_TOP_K,
+    OPEN_WEBUI_URL,
+    PROJECT_ROOT,
+    UPLOAD_DIR,
+    WARMUP,
+)

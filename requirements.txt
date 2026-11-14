@@ -1,0 +1,20 @@
+fastapi
+uvicorn
+websockets
+python-multipart
+python-dotenv
+requests
+faster-whisper
+f5-tts
+soundfile>=0.12
+tqdm
+cached_path
+torchcodec==0.9.1
+transformers
+omnivoice
+
+--extra-index-url https://download.pytorch.org/whl/cu128
+
+torch==2.9.1+cu128
+torchaudio==2.9.1+cu128
+torchvision==0.24.1+cu128
