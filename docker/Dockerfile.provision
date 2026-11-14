@@ -1,0 +1,6 @@
+FROM python:3.11-slim-bookworm
+ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
+WORKDIR /app
+RUN pip install requests==2.32.5
+COPY docker/provision.py ./provision.py
+CMD ["python", "provision.py"]

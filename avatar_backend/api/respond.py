@@ -33,22 +33,27 @@ async def respond(websocket: WebSocket):
     response_task: asyncio.Task | None = None
 
     # stream in a task so the connection can still receive stop requests
-    async def run_response(audio_bytes: bytes) -> None:
+    async def run_response(audio_bytes: bytes, request_id: str | None) -> None:
+        async def send_event(event):
+            if request_id is not None:
+                event = {**event, "request_id": request_id}
+            await websocket.send_json(event)
+
         try:
             async for event in pipeline.respond_streaming(
                 audio_bytes=audio_bytes,
                 condition=condition,
             ):
-                await websocket.send_json(event)
+                await send_event(event)
         except asyncio.CancelledError:
             # notify client to stop playback
             with suppress(WebSocketDisconnect, RuntimeError, OSError):
-                await websocket.send_json({"type": "stopped"})
+                await send_event({"type": "stopped"})
             raise
         except Exception as exc:
             logger.error("[API] response generation failed: %s", exc)
             with suppress(WebSocketDisconnect, RuntimeError, OSError):
-                await websocket.send_json(
+                await send_event(
                     {"type": "error", "message": "Response generation failed."}
                 )
 
@@ -69,6 +74,13 @@ async def respond(websocket: WebSocket):
                 )
                 continue
 
+            request_id = request.get("request_id")
+            if request_id is not None and not isinstance(request_id, str):
+                await websocket.send_json(
+                    {"type": "error", "message": "request_id must be a string."}
+                )
+                continue
+
             # decode audio before starting the pipeline
             try:
                 audio_bytes = base64.b64decode(request["audio_b64"], validate=True)
@@ -83,7 +95,7 @@ async def respond(websocket: WebSocket):
             # replace the previous response
             await _cancel_response(app_state.active_response)
 
-            response_task = asyncio.create_task(run_response(audio_bytes))
+            response_task = asyncio.create_task(run_response(audio_bytes, request_id))
             app_state.active_response = response_task
 
     except WebSocketDisconnect:

@@ -1,0 +1,5 @@
+omnivoice==0.2.1
+transformers==5.3.0
+faster-whisper==1.2.1
+ctranslate2==4.6.0
+f5-tts==1.1.22

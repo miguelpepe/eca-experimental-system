@@ -12,6 +12,7 @@ models/*/**
 !models/.gitkeep
 !models/*/.gitkeep
 .env
+.eca/
 
 __pycache__/
 **/__pycache__/
@@ -22,7 +23,14 @@ RAG/*
 
 avatar_backend/config/system_prompt.local.txt
 
-voices/reference_en.wav
-voices/reference_de.wav
-voices/enhanced.wav
+voices/*
+!voices/warmup.wav
+!voices/warmup-de.wav
+
+unreal/Content/Developers/
+unreal/Content/Collections/
+unreal/Config/*.local.ini
+
+# Unreal content is installed from the reviewed release packages
+unreal/Content/
 

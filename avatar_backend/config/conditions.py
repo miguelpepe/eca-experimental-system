@@ -1,5 +1,6 @@
 # defines experiment conditions (baseline/enhanced) as dicts and with shared values
 from pathlib import Path
+from avatar_backend.config.profile import load_profile
 
 # get base prompt from txt for both conditions
 _BASE_PROMPT = (
@@ -75,6 +76,20 @@ OMNIVOICE_TTS = {
         "audio_chunk_threshold": 20.0,  # only important for long outputs
     },
 }
+
+
+# optional deployment profile; native defaults stay in this file
+_PROFILE, _PROFILE_DIR = load_profile()
+if _PROFILE_DIR:
+    _BASE_PROMPT = (_PROFILE_DIR / "persona.txt").read_text(encoding="utf-8").strip()
+    WHISPER["model"] = _PROFILE.get("stt", {}).get("model", WHISPER["model"])
+    _VOICE = _PROFILE.get("voice", {})
+    if _VOICE:
+        _VOICE_FILE = Path(_VOICE["file"])
+        if _VOICE_FILE.is_absolute() or ".." in _VOICE_FILE.parts:
+            raise ValueError("voice.file must be a relative path inside voices/")
+        OMNIVOICE_TTS["ref_audio"] = str(Path("voices") / _VOICE_FILE)
+        OMNIVOICE_TTS["ref_text"] = _VOICE["text"]
 
 
 # builds condition dict based on enhanced flag (.env)

@@ -1,0 +1,14 @@
+**
+!requirements.txt
+!avatar_backend/
+!avatar_backend/**/
+!avatar_backend/**/*.py
+!avatar_backend/config/system_prompt.txt
+!voices/
+voices/**
+!voices/warmup.wav
+!voices/warmup-de.wav
+!docker/
+!docker/**
+**/__pycache__/**
+**/*.local.*

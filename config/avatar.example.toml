@@ -1,0 +1,20 @@
+# copied to .eca/config/avatar.toml on first setup
+[conversation]
+enhanced = true
+max_history_messages = 4
+
+[llm]
+base_model = "qwen3.5:9b"
+
+[stt]
+model = "turbo"
+
+[voice]
+# relative to voices/; the transcript must match the recording
+file = "warmup.wav"
+text = "Which are the major universities in Berlin?"
+
+[rag]
+enabled = true
+top_k = 5
+timeout = 30

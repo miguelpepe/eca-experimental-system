@@ -63,3 +63,8 @@ app.add_middleware(
 
 # WebSocket /ws: receive base64 audio and stream spoken response events
 app.include_router(respond_router)
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok", "condition": app.state.condition["id"]}

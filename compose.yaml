@@ -1,0 +1,119 @@
+name: eca
+
+x-gpu: &gpu
+  driver: nvidia
+  count: all
+  capabilities: [gpu]
+
+services:
+  ollama:
+    image: ollama/ollama:0.40.16
+    restart: unless-stopped
+    environment:
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-5m}
+      OLLAMA_CONTEXT_LENGTH: ${OLLAMA_CONTEXT_LENGTH:-4096}
+      OLLAMA_MAX_LOADED_MODELS: "1"
+    volumes:
+      - ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices: [*gpu]
+    healthcheck:
+      test: [CMD, ollama, list]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:v0.13.3
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${WEBUI_PORT:-3100}:8080"
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      ENABLE_OPENAI_API: "false"
+      ENABLE_API_KEYS: "true"
+      ENABLE_SIGNUP: "false"
+      WEBUI_ADMIN_EMAIL: ${WEBUI_ADMIN_EMAIL:?Run Setup.bat first}
+      WEBUI_ADMIN_PASSWORD: ${WEBUI_ADMIN_PASSWORD:?Run Setup.bat first}
+      WEBUI_ADMIN_NAME: ECA Admin
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:?Run Setup.bat first}
+      RAG_EMBEDDING_MODEL: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+      DO_NOT_TRACK: "true"
+    volumes:
+      - openwebui:/app/backend/data
+    depends_on:
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)"]
+      interval: 10s
+      timeout: 10s
+      start_period: 60s
+      retries: 90
+
+  provision:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.provision
+    restart: "no"
+    environment:
+      OPEN_WEBUI_URL: http://openwebui:8080
+      OLLAMA_URL: http://ollama:11434
+      WEBUI_ADMIN_EMAIL: ${WEBUI_ADMIN_EMAIL:?Run Setup.bat first}
+      WEBUI_ADMIN_PASSWORD: ${WEBUI_ADMIN_PASSWORD:?Run Setup.bat first}
+    volumes:
+      - state:/state
+      - ./.eca/config:/config:ro
+      - ./RAG:/rag:ro
+    depends_on:
+      ollama:
+        condition: service_healthy
+      openwebui:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_BIND:-127.0.0.1}:${BACKEND_PORT:-8000}:8000"
+    environment:
+      ECA_CONFIG_DIR: /config
+      ECA_RUNTIME_ENV: /state/backend.env
+      ECA_PRELOAD_MODELS: "true"
+      ENHANCED: "true"
+      WARMUP: "false"
+      HF_HOME: /cache/huggingface
+      TORCH_HOME: /cache/torch
+      HF_HUB_DISABLE_TELEMETRY: "1"
+    volumes:
+      - state:/state:ro
+      - cache:/cache
+      - ./.eca/config:/config:ro
+      - ./voices:/app/voices:ro
+      - ./models:/app/models:ro
+    tmpfs:
+      - /app/uploads
+      - /app/output_audio
+    deploy:
+      resources:
+        reservations:
+          devices: [*gpu]
+    depends_on:
+      provision:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      interval: 15s
+      timeout: 10s
+      start_period: 30m
+      retries: 10
+
+volumes:
+  ollama:
+  openwebui:
+  state:
+  cache:

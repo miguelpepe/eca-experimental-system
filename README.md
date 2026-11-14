@@ -1,4 +1,56 @@
-# Metahuman Avatar Backend
+# ECA Experimental System
+
+Spoken MetaHuman avatar with a Python backend and an Unreal Engine 5.6 frontend.
+
+## Quick setup (Windows + Docker)
+
+Install Docker Desktop with its WSL 2 backend and an NVIDIA GPU driver. For the
+frontend, also install Unreal Engine 5.6, C++ build tools and the NVIDIA plugins
+listed in the [Unreal guide](docs/unreal.md).
+
+1. Clone this repository or download its source ZIP. Git LFS is not required.
+2. Run **`Setup.bat`** and choose **Backend**, **Frontend**, or **Both**.
+3. Edit `.eca/config/persona.txt` for the persona. Put documents in `RAG/`.
+   For a custom voice, add a recording to `voices/` and set its filename and exact
+   transcript in `.eca/config/avatar.toml`.
+4. Run **`Start.bat`**, open the demo scene in Unreal and press **Play**.
+   Hold **Space** to record, then release it to send.
+
+The Docker setup defaults to **Enhanced / OmniVoice**. It configures Ollama,
+Open WebUI, the `avatar` model and the knowledge collection automatically.
+The first start builds images and downloads models; later starts reuse them.
+`Start.bat` also imports changed RAG documents. `Update-RAG.bat` imports them
+without opening Unreal; `Stop.bat` stops the containers without deleting data.
+
+When choosing Frontend or Both, setup also downloads the public Unreal content
+from the pinned [asset release](https://github.com/miguelpepe/eca-experimental-system/releases/tag/unreal-assets-v1),
+verifies its checksums and installs it locally. Backend-only setup skips these downloads.
+Existing local asset edits and the private MetaHuman variant are preserved.
+
+Local Docker settings and credentials live in the ignored `.eca/` directory;
+the existing native `.env` is left intact. Your private Unreal profile remains
+local. Docker runs the backend; the Unreal Editor runs directly on Windows.
+
+See the **[Docker setup and customization guide](docs/docker.md)** for requirements,
+separate machines, commands, voice settings and troubleshooting.
+
+## Existing project layout and manual setup
+
+- Backend: `avatar_backend/` (setup below).
+- Unreal project: `unreal/METAHUMAN_5_5.uproject`.
+- Frontend setup and customization: [Unreal guide](docs/unreal.md).
+
+The public scene `ECA_Demo` uses a neutral example MetaHuman. Choose your own
+under **Project Settings > ECA > Avatar > MetaHuman Blueprint**. The existing
+specific character and `Main` scene remain in the ignored local variant.
+
+For the local Unreal project, run `unreal/Setup.bat` once, start the backend,
+then run `unreal/Open.bat`. BlueprintWebsockets and RuntimeAudioImporter source
+copies are included with their licenses. Install the NVIDIA plugins and models
+separately as described in the Unreal guide.
+
+Third-party code retains its original licenses; see
+[third-party notices](THIRD_PARTY_NOTICES.md).
 
 FastAPI backend for a spoken avatar:
 
@@ -165,6 +217,10 @@ Send an audio request as JSON:
 
 Send `{"type":"stop"}` to cancel the active response. A new request also cancels
 the previous response. The connection stays open for further requests.
+
+Clients can include an optional string `request_id` in each request. Response
+events echo that ID so a client can discard late events from cancelled requests.
+Requests without an ID retain the original response format.
 
 ## API Response Format
 
